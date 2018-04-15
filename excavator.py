@@ -12,8 +12,19 @@ def excavate(origin, destination):
     destination: Path
         The directory the files will be moved to
     """
-    for file in origin.iterdir():
-        if file.is_dir():
-            excavate(file, destination)
-        elif file.is_file():
-            file.rename(destination / file.name)
+    duplicates = {}
+    for path in origin.iterdir():
+        if path.is_dir():
+            excavate(path, destination)
+        elif path.is_file():
+            with destination / path.name as new:
+                # handling duplicate filenames
+                if new.exists():
+                    if path.name in duplicates:
+                        duplicates[path.name] += 1
+                    else:
+                        duplicates[path.name] = 1
+                    new = new.with_name(''.join([path.name, '_', str(
+                        duplicates[path.name]), path.suffix]))
+
+                path.rename(new)
